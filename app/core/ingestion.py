@@ -202,7 +202,7 @@ def fetch_youtube_transcript(url: str) -> Path:
 
     logger.info("Fetching transcript for video_id=%s", video_id)
     try:
-        transcript = YouTubeTranscriptApi().fetch(video_id)
+        transcript = YouTubeTranscriptApi.get_transcript(video_id)
         transcript_text = TextFormatter().format_transcript(transcript)
     except Exception as e:
         raise IngestionError(f"Could not fetch transcript: {e}") from e

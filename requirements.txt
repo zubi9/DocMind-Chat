@@ -12,7 +12,7 @@ llama-index-llms-huggingface==0.4.2
 llama-index-vector-stores-chroma==0.4.1
 
 # --- Vector store ---
-chromadb==0.5.23
+chromadb
 
 # --- ML / model runtime ---
 torch==2.5.1
