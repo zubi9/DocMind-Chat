@@ -2,23 +2,26 @@ import logging
 
 from fastapi import APIRouter, HTTPException, UploadFile, File
 
-from app.core.indexing import add_documents, rebuild_index_from_scratch
 from app.core.ingestion import (
     IngestionError,
+    fetch_web_page,
     fetch_youtube_transcript,
     load_single_document,
     save_uploaded_file,
 )
-from app.models import IngestResponse, YoutubeIngestRequest
+from app.core.state_store import mark_documents_changed
+from app.models import IngestResponse, WebIngestRequest, YoutubeIngestRequest
 
 logger = logging.getLogger("docmind.routers.ingest")
 
 router = APIRouter(prefix="/ingest", tags=["ingestion"])
 
+_NEEDS_EMBEDDING_NOTE = "Click 'Create Embeddings' on the Documents page to add it to the searchable index."
+
 
 @router.post("/document", response_model=IngestResponse)
 async def ingest_document(file: UploadFile = File(...)) -> IngestResponse:
-    """Uploads a PDF/DOCX/TXT/MD file, parses it, and adds it to the live index."""
+    """Uploads a PDF/DOCX/TXT/MD file and saves it. Does NOT embed it — see /embeddings/build."""
     content = await file.read()
 
     try:
@@ -26,6 +29,7 @@ async def ingest_document(file: UploadFile = File(...)) -> IngestResponse:
     except IngestionError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
 
+    # Validate it's actually parseable before accepting it, even though we don't embed yet.
     doc = load_single_document(saved_path)
     if doc is None:
         saved_path.unlink(missing_ok=True)
@@ -34,19 +38,18 @@ async def ingest_document(file: UploadFile = File(...)) -> IngestResponse:
             detail=f"'{file.filename}' could not be parsed into readable text (empty, corrupt, or unsupported).",
         )
 
-    chunks_added = add_documents([doc])
+    mark_documents_changed()
 
     return IngestResponse(
         status="success",
-        detail=f"Document '{file.filename}' ingested and added to the index.",
+        detail=f"Document '{file.filename}' saved. {_NEEDS_EMBEDDING_NOTE}",
         source=file.filename,
-        chunks_added=chunks_added,
     )
 
 
 @router.post("/youtube", response_model=IngestResponse)
 def ingest_youtube(request: YoutubeIngestRequest) -> IngestResponse:
-    """Fetches a YouTube transcript and adds it to the live index."""
+    """Fetches a YouTube transcript and saves it. Does NOT embed it — see /embeddings/build."""
     try:
         transcript_path = fetch_youtube_transcript(request.url)
     except IngestionError as e:
@@ -54,29 +57,30 @@ def ingest_youtube(request: YoutubeIngestRequest) -> IngestResponse:
 
     doc = load_single_document(transcript_path)
     if doc is None:
+        transcript_path.unlink(missing_ok=True)
         raise HTTPException(status_code=422, detail="Transcript could not be parsed into readable text.")
 
-    chunks_added = add_documents([doc])
+    mark_documents_changed()
 
     return IngestResponse(
         status="success",
-        detail=f"YouTube transcript for '{request.url}' ingested and added to the index.",
+        detail=f"Transcript for '{request.url}' saved. {_NEEDS_EMBEDDING_NOTE}",
         source=transcript_path.name,
-        chunks_added=chunks_added,
     )
 
 
-@router.post("/reindex", response_model=IngestResponse)
-def reindex() -> IngestResponse:
-    """Wipes the vector store and rebuilds the entire index from everything in user_docs/.
+@router.post("/web", response_model=IngestResponse)
+def ingest_web(request: WebIngestRequest) -> IngestResponse:
+    """Fetches a web page, extracts its main text, and saves it. Does NOT embed it — see /embeddings/build."""
+    try:
+        page_path = fetch_web_page(request.url)
+    except IngestionError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
-    Use this after manually dropping files into the data volume, or to
-    recover from any drift between the vector store and the documents on
-    disk (e.g. after several individual deletes).
-    """
-    doc_count = rebuild_index_from_scratch()
+    mark_documents_changed()
+
     return IngestResponse(
         status="success",
-        detail=f"Index rebuilt from {doc_count} document(s) in user_docs/.",
-        chunks_added=doc_count,
+        detail=f"Page '{request.url}' saved. {_NEEDS_EMBEDDING_NOTE}",
+        source=page_path.name,
     )

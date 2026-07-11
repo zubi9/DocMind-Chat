@@ -7,6 +7,7 @@ RAD_RAG_Sandbox notebook, with all Colab-only calls (`google.colab.files`,
 poppler-utils) are installed at Docker build time instead — see the
 Dockerfile.
 """
+import hashlib
 import logging
 import re
 import shutil
@@ -15,12 +16,14 @@ from urllib.parse import urlparse
 
 import pdfplumber
 import pytesseract
+import trafilatura
 from docx import Document as DocxDocument
 from llama_index.core import Document
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api.formatters import TextFormatter
 
 from app.config import settings
+from app.core.state_store import register_doc_source
 
 logger = logging.getLogger("docmind.ingestion")
 
@@ -175,6 +178,7 @@ def save_uploaded_file(filename: str, content: bytes) -> Path:
         raise IngestionError(f"A document named '{filename}' already exists.")
 
     destination.write_bytes(content)
+    register_doc_source(filename, source_type="upload")
     return destination
 
 
@@ -189,6 +193,7 @@ def ingest_local_path(path: str) -> Path:
         raise IngestionError(f"A document named '{source.name}' already exists.")
 
     shutil.copy2(source, destination)
+    register_doc_source(source.name, source_type="upload")
     return destination
 
 
@@ -208,4 +213,42 @@ def fetch_youtube_transcript(url: str) -> Path:
         raise IngestionError(f"Could not fetch transcript: {e}") from e
 
     transcript_path.write_text(transcript_text, encoding="utf-8")
+    register_doc_source(transcript_path.name, source_type="youtube", source_url=url)
     return transcript_path
+
+
+def fetch_web_page(url: str) -> Path:
+    """Downloads a web page and extracts its main article text (boilerplate/nav/ads stripped)."""
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        raise IngestionError(f"Invalid URL: {url}")
+
+    domain = re.sub(r"[^a-zA-Z0-9]+", "-", parsed.netloc).strip("-")
+    url_hash = hashlib.sha1(url.encode("utf-8")).hexdigest()[:10]
+    filename = f"web_{domain}_{url_hash}.txt"
+    destination = Path(settings.user_docs_dir) / filename
+
+    if destination.exists():
+        raise IngestionError(f"This page has already been ingested ('{filename}').")
+
+    logger.info("Fetching web page: %s", url)
+    try:
+        downloaded = trafilatura.fetch_url(url)
+        if not downloaded:
+            raise IngestionError("Could not download the page (network error or blocked).")
+
+        extracted = trafilatura.extract(
+            downloaded, include_comments=False, include_tables=True, favor_recall=True
+        )
+    except IngestionError:
+        raise
+    except Exception as e:
+        raise IngestionError(f"Failed to fetch/parse page: {e}") from e
+
+    cleaned = clean_text(extracted or "")
+    if not cleaned or len(cleaned.strip()) < 50:
+        raise IngestionError("The page didn't contain enough readable text to ingest.")
+
+    destination.write_text(f"Source: {url}\n\n{cleaned}", encoding="utf-8")
+    register_doc_source(filename, source_type="web", source_url=url)
+    return destination

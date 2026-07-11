@@ -18,7 +18,7 @@ from fastapi.staticfiles import StaticFiles
 from app.config import settings
 from app.core.indexing import get_index
 from app.core.llm_setup import configure_models
-from app.routers import documents, health, ingest, query
+from app.routers import documents, embeddings, health, ingest, models, query
 
 logging.basicConfig(
     level=settings.log_level,
@@ -59,6 +59,8 @@ app.include_router(health.router)
 app.include_router(ingest.router)
 app.include_router(query.router)
 app.include_router(documents.router)
+app.include_router(embeddings.router)
+app.include_router(models.router)
 
 # Serves the single-page frontend (app/../frontend/index.html) at /ui/.
 _frontend_dir = Path(__file__).resolve().parent.parent / "frontend"
