@@ -29,7 +29,7 @@ pytesseract==0.3.13
 pillow==11.0.0
 
 # --- YouTube ingestion ---
-youtube-transcript-api==0.6.3
+youtube-transcript-api==1.2.4
 
 # --- Web page ingestion ---
 trafilatura==1.12.2

@@ -26,7 +26,7 @@ from app.config import settings
 from app.core.state_store import register_doc_source
 
 logger = logging.getLogger("docmind.ingestion")
-
+ytt_api = YouTubeTranscriptApi()
 
 class IngestionError(Exception):
     """Raised for any recoverable ingestion failure (bad file, bad URL, etc.)."""
@@ -199,7 +199,8 @@ def ingest_local_path(path: str) -> Path:
 
 def fetch_youtube_transcript(url: str) -> Path:
     """Downloads a YouTube transcript and saves it as a .txt file in user_docs."""
-    video_id = extract_video_id(url)
+    video_id = str(extract_video_id(url))
+    print("youtube video id: ", video_id)
     transcript_path = Path(settings.user_docs_dir) / f"{video_id}.txt"
 
     if transcript_path.exists():
@@ -207,11 +208,13 @@ def fetch_youtube_transcript(url: str) -> Path:
 
     logger.info("Fetching transcript for video_id=%s", video_id)
     try:
-        transcript = YouTubeTranscriptApi.get_transcript(video_id)
+        # transcript_text = "this testing text" # testing purpose
+        transcript = ytt_api.fetch(video_id=video_id)
         transcript_text = TextFormatter().format_transcript(transcript)
     except Exception as e:
         raise IngestionError(f"Could not fetch transcript: {e}") from e
 
+    # print(f"Fetched transcript for video_id={video_id}, length={len(transcript_text)} characters.")
     transcript_path.write_text(transcript_text, encoding="utf-8")
     register_doc_source(transcript_path.name, source_type="youtube", source_url=url)
     return transcript_path
