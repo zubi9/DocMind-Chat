@@ -244,6 +244,7 @@
   .model-card-name{font-size:14px; font-weight:700; display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
   .badge{font-family:var(--mono); font-size:10px; font-weight:600; padding:2px 7px; border-radius:5px; background:var(--panel-2); color:var(--ink-soft); white-space:nowrap;}
   .badge-gated{background:#fef3c7; color:#92400e;}
+  .badge-cached{background:var(--green-bg); color:#15803d;}
   .model-card-pub{font-size:11.5px; color:var(--ink-faint); margin-top:1px;}
   .model-card-notes{font-size:12px; color:var(--ink-soft); line-height:1.5; margin-top:7px;}
   .model-card-action{flex-shrink:0;}
@@ -816,6 +817,7 @@ function openModal(kind){
           ${m.name}
           <span class="badge">${m.params}</span>
           ${m.gated ? '<span class="badge badge-gated">Gated · needs HF_TOKEN</span>' : ''}
+          ${m.cached ? '<span class="badge badge-cached">Cached</span>' : '<span class="badge">Downloads on first use</span>'}
         </div>
         <div class="model-card-pub">${m.publisher}${m.context_window ? ' · ' + m.context_window + ' ctx' : ''}${m.dims ? ' · ' + m.dims + 'd' : ''}</div>
         <div class="model-card-notes">${m.notes}</div>
@@ -922,8 +924,21 @@ async function sendMessage(){
   appendMessage('user', escapeHtml(question));
   const typingDiv = appendMessage('assistant', '<div class="typing"><span></span><span></span><span></span></div>');
 
+  // CPU inference on small models can genuinely take a few minutes, but if
+  // it's still hanging after this long, something's wrong (e.g. the
+  // backend was OOM-killed mid-generation) — fail with a clear message
+  // instead of leaving the typing indicator spinning forever.
+  const TIMEOUT_MS = 6 * 60 * 1000;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
   try{
-    const res = await fetch(`${API_BASE}/query`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ question }) });
+    const res = await fetch(`${API_BASE}/query`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ question }),
+      signal: controller.signal,
+    });
     const data = await res.json();
     if(!res.ok) throw new Error(data.detail || 'Query failed');
 
@@ -939,7 +954,18 @@ async function sendMessage(){
       document.getElementById('stale-banner').classList.add('show');
     }
   }catch(e){
-    typingDiv.querySelector('.msg-bubble').innerHTML = `<span style="color:#dc2626;">${escapeHtml(e.message)}</span>`;
+    let message;
+    if(e.name === 'AbortError'){
+      message = `Timed out after ${TIMEOUT_MS/60000} minutes waiting for a response. The model may be overloaded — try a shorter question, a lighter model from the gallery, or check the backend logs.`;
+    }else if(e instanceof TypeError){
+      message = 'Lost connection to the backend. It may have crashed or run out of memory mid-generation — check `docker compose logs` (look for an OOM kill) and try again, possibly with a smaller model from the gallery.';
+    }else{
+      message = e.message;
+    }
+    typingDiv.querySelector('.msg-bubble').innerHTML = `<span style="color:#dc2626;">${escapeHtml(message)}</span>`;
+    checkHealth();
+  }finally{
+    clearTimeout(timeoutId);
   }
 }
 
