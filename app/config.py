@@ -19,9 +19,9 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
 
     # --- Storage paths ---
-    data_dir: str = "./data"
-    user_docs_dir: str = "./data/user_docs"
-    chroma_dir: str = "./data/chroma_db"
+    data_dir: str = "/app/data"
+    user_docs_dir: str = "/app/data/user_docs"
+    chroma_dir: str = "/app/data/chroma_db"
     chroma_collection_name: str = "docmind_collection"
 
     # --- Embedding model ---

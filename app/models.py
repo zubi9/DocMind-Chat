@@ -75,6 +75,7 @@ class ModelCatalogEntry(BaseModel):
     gated: Optional[bool] = None
     context_window: Optional[int] = None
     dims: Optional[int] = None
+    cached: Optional[bool] = None
 
 
 class ModelsResponse(BaseModel):

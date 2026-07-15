@@ -200,7 +200,7 @@ def ingest_local_path(path: str) -> Path:
 def fetch_youtube_transcript(url: str) -> Path:
     """Downloads a YouTube transcript and saves it as a .txt file in user_docs."""
     video_id = str(extract_video_id(url))
-    print("youtube video id: ", video_id)
+    # print("youtube video id: ", video_id)
     transcript_path = Path(settings.user_docs_dir) / f"{video_id}.txt"
 
     if transcript_path.exists():
@@ -214,7 +214,6 @@ def fetch_youtube_transcript(url: str) -> Path:
     except Exception as e:
         raise IngestionError(f"Could not fetch transcript: {e}") from e
 
-    # print(f"Fetched transcript for video_id={video_id}, length={len(transcript_text)} characters.")
     transcript_path.write_text(transcript_text, encoding="utf-8")
     register_doc_source(transcript_path.name, source_type="youtube", source_url=url)
     return transcript_path

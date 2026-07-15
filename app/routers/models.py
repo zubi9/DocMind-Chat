@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException
 
 from app.core.indexing import refresh_state_after_embed_switch
 from app.core.llm_setup import ModelSwitchError, get_active_models, switch_embedding_model, switch_llm
+from app.core.model_cache import is_model_cached
 from app.core.model_catalog import EMBEDDING_CATALOG, LLM_CATALOG
 from app.models import ModelsResponse, ModelSwitchRequest, ModelSwitchResponse
 
@@ -12,12 +13,16 @@ logger = logging.getLogger("docmind.routers.models")
 router = APIRouter(prefix="/models", tags=["models"])
 
 
+def _with_cache_status(catalog: list[dict]) -> list[dict]:
+    return [{**entry, "cached": is_model_cached(entry["id"])} for entry in catalog]
+
+
 @router.get("", response_model=ModelsResponse)
 def list_models() -> ModelsResponse:
     active = get_active_models()
     return ModelsResponse(
-        llms=LLM_CATALOG,
-        embeddings=EMBEDDING_CATALOG,
+        llms=_with_cache_status(LLM_CATALOG),
+        embeddings=_with_cache_status(EMBEDDING_CATALOG),
         active_llm=active["llm"],
         active_embedding=active["embedding"],
     )

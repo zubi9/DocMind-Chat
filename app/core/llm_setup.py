@@ -15,6 +15,7 @@ from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.llms.huggingface import HuggingFaceLLM
 
 from app.config import settings
+from app.core.model_cache import log_cache_status
 from app.core.model_catalog import get_embedding_entry, get_llm_entry
 from app.core.state_store import get_state, update_state
 
@@ -56,6 +57,8 @@ def _free_memory() -> None:
 
 
 def _load_embed_model(embed_id: str) -> None:
+    log_cache_status(embed_id, "Embedding model")
+
     entry = get_embedding_entry(embed_id)
     kwargs = {"model_name": embed_id}
     if entry:
@@ -74,6 +77,8 @@ def _load_embed_model(embed_id: str) -> None:
 
 
 def _load_llm(llm_id: str) -> None:
+    log_cache_status(llm_id, "LLM")
+
     entry = get_llm_entry(llm_id)
     context_window = entry["context_window"] if entry else settings.llm_context_window
     device_map = _resolve_device_map()

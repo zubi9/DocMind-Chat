@@ -130,6 +130,38 @@ tighten `allow_origins` in `app/main.py` before deploying publicly.
   change `LLM_MODEL_NAME` / `EMBED_MODEL_NAME` in `.env` — no code changes
   needed.
 
+## Developing without rebuilding Docker every time
+
+Two scripts in `scripts/` are meant to shorten the edit-test loop:
+
+**`scripts/preflight_check.py`** — instant sanity check, no dependencies
+needed. Run this after any code change, before `docker compose up --build`:
+```bash
+python scripts/preflight_check.py
+```
+Catches Python syntax errors, unused imports, a broken `Dockerfile COPY`
+path, and frontend JS syntax errors — all in about a second, instead of
+waiting through a multi-minute image build to find a typo.
+
+**`scripts/run_local.py`** — runs the actual app on your machine (no
+Docker at all), for testing real behavior:
+```bash
+python scripts/run_local.py
+```
+It creates a `.venv`, installs `requirements.txt` into it, points data/model
+paths at `./local_data` (kept separate from the Docker volume in `./data`
+so the two never collide), and starts `uvicorn --reload`. Use
+`--no-install` on later runs to skip the pip step and restart faster, and
+`--port` to change the port. UI at `http://localhost:8000/ui/`, same as
+the containerized version.
+
+Note: PDF OCR fallback needs `tesseract-ocr` + `poppler-utils` installed
+on your host for this path (the Dockerfile installs them automatically);
+everything else works without them.
+
+Once a change checks out locally, rebuild the Docker image to confirm the
+containerized path still works before you consider it done.
+
 ## API reference
 
 ### Health
