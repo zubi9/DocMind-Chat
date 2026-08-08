@@ -5,6 +5,7 @@ __pycache__/
 .git
 .gitignore
 data/
+local_data/
 .venv/
 venv/
 *.egg-info/
