@@ -1,0 +1,67 @@
+# Ollama-backed variant of DocMind Chat.
+#
+# Runs two containers: `ollama` (serves quantized GGUF models over HTTP)
+# and `docmind-api` (the same FastAPI app, built from the slim
+# Dockerfile.ollama, with MODEL_BACKEND=ollama).
+#
+# Usage:
+#   docker compose -f docker-compose.ollama.yml up --build
+#
+# This is a separate compose file rather than a profile/override on the
+# default docker-compose.yml so the two variants stay simple to reason
+# about independently — pick one file, run one command.
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: docmind-ollama
+    ports:
+      - "11435:11434"  # exposed on the host too, handy for `ollama pull`/`ollama run` debugging
+    volumes:
+      # Persists every pulled model across restarts — this is the biggest
+      # win of this variant: models are quantized GGUF, pulled once, and
+      # never re-downloaded or re-loaded as raw fp16/fp32 tensors.
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+
+    # --- Optional: uncomment to enable GPU acceleration ---
+    # (requires the NVIDIA Container Toolkit installed on the host)
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  docmind-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.ollama
+    image: docmind-chat:ollama
+    container_name: docmind-chat-ollama
+    env_file:
+      - .env
+    environment:
+      # Overridable via .env, but these two are the point of this file:
+      # route inference at the sibling `ollama` service, not localhost.
+      MODEL_BACKEND: ollama
+      OLLAMA_BASE_URL: http://ollama:11434
+    ports:
+      - "8000:8000"
+    volumes:
+      # Persists ingested documents and the Chroma vector DB. No HF model
+      # cache volume needed — Ollama manages its own store (see above).
+      - ./data:/app/data
+    depends_on:
+      - ollama
+    restart: unless-stopped
+
+    # Memory limits matter far less here than in the HuggingFace variant —
+    # quantized GGUF inference in Ollama's llama.cpp runtime uses a
+    # fraction of the memory raw fp16/fp32 weights need — but a cap is
+    # still good practice:
+    # mem_limit: 4g
+
+volumes:
+  ollama_data:

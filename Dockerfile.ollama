@@ -1,0 +1,37 @@
+FROM python:3.11-slim
+
+# --- System dependencies ---
+# tesseract-ocr + poppler-utils: needed for the PDF OCR fallback path
+# (extract_pdf_text -> pdf2image -> pytesseract), independent of which
+# model backend is in use.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    tesseract-ocr \
+    poppler-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Slim dependency set — no torch/transformers/accelerate. All inference
+# happens over HTTP in the separate `ollama` container (see
+# docker-compose.ollama.yml), so this image never loads model weights
+# in-process and builds/starts noticeably faster and smaller than the
+# HuggingFace-backend image.
+COPY requirements-ollama.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements-ollama.txt
+
+# Copy application code + static frontend.
+COPY app ./app
+COPY frontend ./frontend
+
+# Data directory (documents, chroma db) — mounted as a volume in
+# docker-compose so it survives container restarts/rebuilds. No HF model
+# cache needed here; Ollama manages its own model store in its own volume.
+RUN mkdir -p /app/data/user_docs /app/data/chroma_db
+
+ENV PYTHONUNBUFFERED=1 \
+    MODEL_BACKEND=ollama
+
+EXPOSE 8000
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

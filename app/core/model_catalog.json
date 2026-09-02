@@ -1,0 +1,193 @@
+{
+  "_comment": "Curated model gallery, editable without touching any Python. Structure: {backend: {llms: [...], embeddings: [...]}}. Each entry needs at least 'id' (the exact HuggingFace repo id or Ollama tag), 'name', 'publisher', 'params', and 'notes'. LLM entries also take 'context_window' and 'gated'. Embedding entries also take 'dims' and optionally 'query_instruction'/'text_instruction'. Set 'default': true on exactly one entry per list to flag it in the UI (the ACTUAL default is still controlled by LLM_MODEL_NAME/OLLAMA_LLM_MODEL etc. in .env \u2014 this flag is just a UI hint, keep them in sync).",
+  "huggingface": {
+    "llms": [
+      {
+        "id": "mistralai/Mistral-7B-Instruct-v0.2",
+        "name": "Mistral 7B Instruct v0.2",
+        "publisher": "Mistral AI",
+        "params": "7B",
+        "context_window": 8192,
+        "gated": false,
+        "default": true,
+        "notes": "Default generation model. Strong general-purpose quality, but noticeably heavier than the other options here \u2014 budget 16GB+ RAM for comfortable CPU inference, or use the Ollama backend's quantized Mistral for a much lighter footprint on the same model family."
+      },
+      {
+        "id": "microsoft/phi-2",
+        "name": "Phi-2",
+        "publisher": "Microsoft",
+        "params": "2.7B",
+        "context_window": 2048,
+        "gated": false,
+        "notes": "Lighter alternative to the default. Solid general-purpose reasoning for its size."
+      },
+      {
+        "id": "microsoft/Phi-4-mini-instruct",
+        "name": "Phi-4-mini",
+        "publisher": "Microsoft",
+        "params": "3.8B",
+        "context_window": 4096,
+        "gated": false,
+        "notes": "Newer architecture, strong instruction-following. Lighter than Mistral-7B, heavier than Phi-2."
+      },
+      {
+        "id": "meta-llama/Llama-3.2-1B-Instruct",
+        "name": "Llama 3.2 1B Instruct",
+        "publisher": "Meta",
+        "params": "1B",
+        "context_window": 4096,
+        "gated": true,
+        "notes": "Fastest, lightest option here. Gated: requires an HF_TOKEN with the Meta license accepted."
+      },
+      {
+        "id": "meta-llama/Llama-3.2-3B-Instruct",
+        "name": "Llama 3.2 3B Instruct",
+        "publisher": "Meta",
+        "params": "3B",
+        "context_window": 4096,
+        "gated": true,
+        "notes": "Good quality/speed balance. Gated: requires an HF_TOKEN with the Meta license accepted."
+      },
+      {
+        "id": "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+        "name": "SmolLM2 1.7B Instruct",
+        "publisher": "HuggingFace",
+        "params": "1.7B",
+        "context_window": 4096,
+        "gated": false,
+        "notes": "Compact, fast, MIT licensed. Good choice for CPU-only or memory-constrained deployments."
+      }
+    ],
+    "embeddings": [
+      {
+        "id": "sentence-transformers/all-MiniLM-L6-v2",
+        "name": "MiniLM-L6-v2",
+        "publisher": "Sentence-Transformers",
+        "params": "22M",
+        "dims": 384,
+        "default": true,
+        "notes": "Default embedding model. Fast, well-rounded baseline.",
+        "max_input_tokens": 256
+      },
+      {
+        "id": "BAAI/bge-small-en-v1.5",
+        "name": "BGE-small-en v1.5",
+        "publisher": "BAAI",
+        "params": "33M",
+        "dims": 384,
+        "query_instruction": "Represent this sentence for searching relevant passages: ",
+        "notes": "Strong retrieval quality for its size. Instruction is auto-applied to queries.",
+        "max_input_tokens": 512
+      },
+      {
+        "id": "intfloat/e5-small-v2",
+        "name": "E5-small-v2",
+        "publisher": "Intfloat",
+        "params": "33M",
+        "dims": 384,
+        "query_instruction": "query: ",
+        "text_instruction": "passage: ",
+        "notes": "Needs query/passage prefixes for best results \u2014 applied automatically here.",
+        "max_input_tokens": 512
+      },
+      {
+        "id": "thenlper/gte-small",
+        "name": "GTE-small",
+        "publisher": "Alibaba (thenlper)",
+        "params": "33M",
+        "dims": 384,
+        "notes": "Good general-purpose compact embedding model, no special prefixes needed.",
+        "max_input_tokens": 512
+      }
+    ]
+  },
+  "ollama": {
+    "llms": [
+      {
+        "id": "mistral:7b-instruct-v0.2-q4_0",
+        "name": "Mistral 7B Instruct v0.2 (Q4)",
+        "publisher": "Mistral AI",
+        "params": "7B",
+        "context_window": 8192,
+        "gated": false,
+        "default": true,
+        "notes": "Default generation model. ~4.1GB quantized \u2014 the quantized route to the same model family as the HuggingFace default, at a fraction of the memory."
+      },
+      {
+        "id": "phi3:mini",
+        "name": "Phi-3-mini (Q4)",
+        "publisher": "Microsoft",
+        "params": "3.8B",
+        "context_window": 4096,
+        "gated": false,
+        "notes": "Lighter alternative to the default. ~2.2GB quantized \u2014 good balance of quality and speed on CPU."
+      },
+      {
+        "id": "llama3.2:1b",
+        "name": "Llama 3.2 1B Instruct (Q4)",
+        "publisher": "Meta",
+        "params": "1B",
+        "context_window": 4096,
+        "gated": false,
+        "notes": "Smallest, fastest option. ~0.7GB quantized. No gating via Ollama \u2014 license accepted by pulling the tag."
+      },
+      {
+        "id": "llama3.2:3b",
+        "name": "Llama 3.2 3B Instruct (Q4)",
+        "publisher": "Meta",
+        "params": "3B",
+        "context_window": 4096,
+        "gated": false,
+        "notes": "Good quality/speed balance. ~2GB quantized."
+      },
+      {
+        "id": "qwen2.5:1.5b",
+        "name": "Qwen 2.5 1.5B Instruct (Q4)",
+        "publisher": "Alibaba",
+        "params": "1.5B",
+        "context_window": 4096,
+        "gated": false,
+        "notes": "Strong for its size, especially structured/technical answers. ~1GB quantized."
+      },
+      {
+        "id": "smollm2:1.7b",
+        "name": "SmolLM2 1.7B Instruct (Q4)",
+        "publisher": "HuggingFace",
+        "params": "1.7B",
+        "context_window": 4096,
+        "gated": false,
+        "notes": "Compact, MIT licensed. ~1GB quantized."
+      }
+    ],
+    "embeddings": [
+      {
+        "id": "nomic-embed-text",
+        "name": "Nomic Embed Text",
+        "publisher": "Nomic AI",
+        "params": "137M",
+        "dims": 768,
+        "default": true,
+        "notes": "Default embedding model. Strong general-purpose retrieval quality.",
+        "max_input_tokens": 2048
+      },
+      {
+        "id": "mxbai-embed-large",
+        "name": "MxBai Embed Large",
+        "publisher": "Mixedbread AI",
+        "params": "335M",
+        "dims": 1024,
+        "notes": "Higher quality, larger footprint (~670MB quantized) than the other options here.",
+        "max_input_tokens": 512
+      },
+      {
+        "id": "all-minilm",
+        "name": "All-MiniLM (Ollama)",
+        "publisher": "Sentence-Transformers (via Ollama)",
+        "params": "22M",
+        "dims": 384,
+        "notes": "Smallest and fastest embedding option. Same family as the HuggingFace-backend default.",
+        "max_input_tokens": 256
+      }
+    ]
+  }
+}

@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DocMind</title>
+<style>
+  :root{
+    --bg:#ffffff;
+    --panel:#fafafa;
+    --panel-2:#f5f5f5;
+    --border:#e5e5e5;
+    --border-strong:#d4d4d4;
+    --ink:#111111;
+    --ink-soft:#525252;
+    --ink-faint:#8a8a8a;
+    --green:#22c55e;
+    --green-bg:#f0fdf4;
+    --green-border:#bbf7d0;
+    --amber:#d97706;
+    --amber-bg:#fffbeb;
+    --amber-border:#fde68a;
+    --red:#ef4444;
+    --red-bg:#fef2f2;
+    --radius:10px;
+    --radius-lg:14px;
+    --mono: ui-monospace, "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{margin:0; font-family:var(--sans); color:var(--ink); background:var(--bg); -webkit-font-smoothing:antialiased;}
+  button{font-family:inherit;}
+  input{font-family:inherit;}
+
+  /* ---------- Header ---------- */
+  header{
+    position:sticky; top:0; z-index:20;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 24px; border-bottom:1px solid var(--border); background:var(--bg);
+  }
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand-mark{width:30px; height:30px; border-radius:8px; background:var(--ink); color:#fff; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .brand-mark svg{width:16px; height:16px;}
+  .brand-name{font-weight:700; font-size:15px; letter-spacing:-0.01em;}
+  nav.tabs{display:flex; align-items:center; gap:4px; margin-left:8px;}
+  .tab-btn{display:flex; align-items:center; gap:6px; padding:7px 14px; border-radius:8px; border:1px solid transparent; background:transparent; color:var(--ink-soft); font-size:13.5px; font-weight:500; cursor:pointer; transition:background .15s ease, color .15s ease;}
+  .tab-btn svg{width:15px; height:15px;}
+  .tab-btn:hover{background:var(--panel-2); color:var(--ink);}
+  .tab-btn.active{background:var(--panel-2); color:var(--ink); border-color:var(--border);}
+  .header-status{display:flex; align-items:center; gap:14px; font-size:12.5px; color:var(--ink-soft); font-family:var(--mono);}
+  .status-chip{display:flex; align-items:center; gap:6px;}
+  .status-chip svg{width:14px; height:14px; opacity:.7;}
+  .dot{width:7px; height:7px; border-radius:50%; background:var(--green); flex-shrink:0;}
+  .dot.offline{background:var(--red);}
+  .divider-dot{color:var(--border-strong);}
+  .header-left{display:flex; align-items:center; gap:18px;}
+
+  /* ---------- Layout shell ---------- */
+  main{display:none; height:calc(100vh - 53px);}
+  main.active{display:flex; flex-direction:column;}
+
+  /* ---------- Documents view ---------- */
+  #view-documents{overflow-y:auto;}
+  .docs-wrap{max-width:1040px; margin:0 auto; padding:36px 24px 64px;}
+  .page-title{font-size:26px; font-weight:700; letter-spacing:-0.01em; margin:0 0 6px;}
+  .page-sub{color:var(--ink-soft); font-size:14px; margin:0 0 28px;}
+
+  .cards-row{display:grid; grid-template-columns:1fr 1fr 1fr; gap:18px; margin-bottom:22px;}
+  @media (max-width: 900px){ .cards-row{grid-template-columns:1fr;} }
+
+  .card{background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px;}
+
+  .dropzone{border:1.5px dashed var(--border-strong); border-radius:var(--radius-lg); padding:26px 16px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:9px; cursor:pointer; transition:border-color .15s ease, background .15s ease; background:var(--bg);}
+  .dropzone.drag{border-color:var(--ink); background:var(--panel);}
+  .dropzone-icon{width:38px; height:38px; border-radius:50%; background:var(--panel-2); display:flex; align-items:center; justify-content:center; color:var(--ink-soft);}
+  .dropzone-icon svg{width:17px; height:17px;}
+  .dz-title{font-weight:600; font-size:14px;}
+  .dz-desc{font-size:12.5px; color:var(--ink-soft); line-height:1.5; max-width:210px;}
+  .dz-types{font-family:var(--mono); font-size:10.5px; color:var(--ink-faint); letter-spacing:.03em;}
+  input[type="file"]{display:none;}
+
+  .btn{appearance:none; border:none; cursor:pointer; border-radius:8px; font-weight:600; font-size:13.5px; padding:9px 18px; transition:background .15s ease, opacity .15s ease, transform .05s ease; display:inline-flex; align-items:center; justify-content:center; gap:6px;}
+  .btn:active{transform:translateY(1px);}
+  .btn-outline{background:#fff; border:1px solid var(--border-strong); color:var(--ink);}
+  .btn-outline:hover{background:var(--panel-2);}
+  .btn-dark{background:var(--ink); color:#fff;}
+  .btn-dark:hover{background:#000;}
+  .btn-amber{background:var(--amber); color:#fff;}
+  .btn-amber:hover{background:#b45309;}
+  .btn-disabled, .btn:disabled{background:#a3a3a3; color:#fff; cursor:not-allowed;}
+  .btn-disabled:hover, .btn:disabled:hover{background:#a3a3a3;}
+  .btn-full{width:100%; margin-top:14px;}
+  .btn-sm{padding:6px 12px; font-size:12.5px; border-radius:7px;}
+
+  .icon-card{display:flex; flex-direction:column; height:100%;}
+  .icon-card-head{display:flex; align-items:flex-start; gap:11px; margin-bottom:16px;}
+  .card-icon{width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .card-icon svg{width:16px; height:16px;}
+  .icon-yt{background:#fee2e2; color:#dc2626;}
+  .icon-web{background:#dbeafe; color:#2563eb;}
+  .card-title{font-weight:600; font-size:14px; margin:0 0 2px;}
+  .card-sub{font-size:12.5px; color:var(--ink-soft); margin:0;}
+  .card-body{flex:1; display:flex; flex-direction:column; justify-content:flex-end; gap:9px;}
+  .input-row{display:flex; align-items:center; gap:8px; border:1px solid var(--border-strong); border-radius:8px; padding:9px 12px; background:#fff;}
+  .input-row svg{width:14px; height:14px; color:var(--ink-faint); flex-shrink:0;}
+  .input-row input{border:none; outline:none; flex:1; font-size:13px; color:var(--ink); background:transparent; min-width:0;}
+  .input-row input::placeholder{color:var(--ink-faint); font-family:var(--mono); font-size:11.5px;}
+
+  .section-title{display:flex; align-items:center; gap:8px; font-weight:700; font-size:15px; margin:0 0 14px;}
+  .section-title svg{width:16px; height:16px; color:var(--ink-soft);}
+
+  /* Index status banner */
+  .status-banner{border-radius:var(--radius-lg); border:1px solid var(--border); padding:18px 20px; display:flex; align-items:center; gap:16px; margin-bottom:28px;}
+  .status-banner.empty{background:var(--panel); border-color:var(--border);}
+  .status-banner.stale{background:var(--amber-bg); border-color:var(--amber-border);}
+  .status-banner.synced{background:var(--green-bg); border-color:var(--green-border);}
+  .status-banner-icon{width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; background:#fff; border:1px solid var(--border);}
+  .status-banner.stale .status-banner-icon{color:var(--amber); border-color:var(--amber-border);}
+  .status-banner.synced .status-banner-icon{color:var(--green); border-color:var(--green-border);}
+  .status-banner.empty .status-banner-icon{color:var(--ink-faint);}
+  .status-banner-icon svg{width:19px; height:19px;}
+  .status-banner-text{flex:1; min-width:0;}
+  .status-banner-title{font-weight:700; font-size:14.5px; margin:0 0 3px;}
+  .status-banner-desc{font-size:12.5px; color:var(--ink-soft); line-height:1.5; margin:0;}
+  .status-banner-action{flex-shrink:0;}
+  .spinner{width:14px; height:14px; border-radius:50%; border:2px solid rgba(255,255,255,.4); border-top-color:#fff; animation:spin .7s linear infinite;}
+  .spinner.dark{border:2px solid rgba(0,0,0,.15); border-top-color:var(--ink);}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .doc-list-card{border:1px solid var(--border); border-radius:var(--radius-lg); background:var(--panel); min-height:200px;}
+  .empty-state{display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:50px 24px; gap:12px;}
+  .empty-icon{width:46px; height:46px; border-radius:50%; background:#fff; border:1px solid var(--border); display:flex; align-items:center; justify-content:center; color:var(--ink-faint);}
+  .empty-icon svg{width:20px; height:20px;}
+  .empty-title{font-weight:700; font-size:15.5px;}
+  .empty-desc{font-size:13.5px; color:var(--ink-soft); max-width:340px; line-height:1.5;}
+
+  .doc-row{display:flex; align-items:center; justify-content:space-between; padding:12px 18px; border-bottom:1px solid var(--border); font-size:13.5px;}
+  .doc-row:last-child{border-bottom:none;}
+  .doc-row-left{display:flex; align-items:center; gap:10px; min-width:0;}
+  .doc-type-icon{width:26px; height:26px; border-radius:7px; display:flex; align-items:center; justify-content:center; flex-shrink:0; background:var(--panel-2); color:var(--ink-soft);}
+  .doc-type-icon svg{width:13px; height:13px;}
+  .doc-type-icon.upload{background:#eff6ff; color:#2563eb;}
+  .doc-type-icon.youtube{background:#fee2e2; color:#dc2626;}
+  .doc-type-icon.web{background:#f0fdf4; color:#16a34a;}
+  .doc-name{font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .doc-meta{font-family:var(--mono); font-size:11px; color:var(--ink-faint); flex-shrink:0; margin-left:12px;}
+  .doc-row-actions{display:flex; align-items:center; gap:10px; flex-shrink:0; margin-left:14px;}
+  .icon-btn{background:none; border:none; cursor:pointer; color:var(--ink-faint); display:flex; align-items:center; padding:4px; border-radius:6px;}
+  .icon-btn:hover{color:var(--red); background:var(--red-bg);}
+  .icon-btn svg{width:15px; height:15px;}
+
+  .toast{position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--ink); color:#fff; padding:10px 18px; border-radius:8px; font-size:13px; z-index:200; opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease; max-width:480px; text-align:center;}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(-4px);}
+  .toast.error{background:#dc2626;}
+
+  /* ---------- Chat view ---------- */
+  #view-chat{flex-direction:row; flex:1; min-height:0;}
+  .kb-sidebar{width:270px; flex-shrink:0; border-right:1px solid var(--border); display:flex; flex-direction:column; min-height:0;}
+
+  .models-section{border-bottom:1px solid var(--border); padding:14px 14px 16px;}
+  .models-section-title{font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-faint); margin:0 0 10px;}
+  .model-row{display:flex; align-items:center; justify-content:space-between; gap:8px; padding:9px 10px; border-radius:8px; border:1px solid var(--border); background:var(--panel); cursor:pointer; margin-bottom:8px; text-align:left; width:100%;}
+  .model-row:last-child{margin-bottom:0;}
+  .model-row:hover{background:var(--panel-2);}
+  .model-row-left{min-width:0; flex:1;}
+  .model-row-label{font-size:10.5px; color:var(--ink-faint); font-family:var(--mono); text-transform:uppercase; letter-spacing:.03em;}
+  .model-row-value{font-size:12.5px; font-weight:600; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .model-row svg.chev{width:14px; height:14px; color:var(--ink-faint); flex-shrink:0;}
+
+  .kb-header{padding:14px 18px 10px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border);}
+  .kb-header-title{display:flex; align-items:center; gap:7px; font-weight:700; font-size:13px;}
+  .kb-header-title svg{width:14px; height:14px; color:var(--ink-soft);}
+  .kb-count{font-family:var(--mono); font-size:11px; color:var(--ink-faint);}
+  .kb-list{flex:1; overflow-y:auto; padding:6px; min-height:60px;}
+  .kb-item{display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:7px; font-size:12.5px; color:var(--ink-soft);}
+  .kb-item:hover{background:var(--panel-2);}
+  .kb-item svg{width:13px; height:13px; flex-shrink:0; color:var(--ink-faint);}
+  .kb-item span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .kb-empty{display:flex; flex-direction:column; align-items:center; text-align:center; padding:28px 18px; gap:10px;}
+  .kb-empty .empty-icon{width:36px; height:36px;}
+  .kb-empty-title{font-size:12.5px; font-weight:600;}
+  .kb-empty-desc{font-size:11.5px; color:var(--ink-soft); line-height:1.5;}
+  .kb-footer{border-top:1px solid var(--border); padding:10px;}
+  .kb-manage-btn{display:flex; align-items:center; gap:7px; width:100%; background:none; border:1px solid var(--border); border-radius:8px; padding:9px 12px; font-size:12.5px; font-weight:600; color:var(--ink); cursor:pointer;}
+  .kb-manage-btn:hover{background:var(--panel-2);}
+  .kb-manage-btn svg{width:14px; height:14px;}
+
+  .chat-main{flex:1; display:flex; flex-direction:column; min-width:0; min-height:0;}
+  .stale-banner{display:none; align-items:center; gap:10px; background:var(--amber-bg); border-bottom:1px solid var(--amber-border); padding:9px 24px; font-size:12.5px; color:#92400e;}
+  .stale-banner.show{display:flex;}
+  .stale-banner svg{width:15px; height:15px; flex-shrink:0;}
+  .stale-banner button{margin-left:auto; background:none; border:1px solid var(--amber-border); color:#92400e; border-radius:6px; padding:5px 10px; font-size:11.5px; font-weight:600; cursor:pointer; flex-shrink:0;}
+  .stale-banner button:hover{background:#fef3c7;}
+
+  .chat-scroll{flex:1; overflow-y:auto; display:flex; flex-direction:column;}
+  .chat-empty{margin:auto; text-align:center; max-width:380px; padding:24px; display:flex; flex-direction:column; align-items:center; gap:14px;}
+  .chat-empty .empty-icon{width:52px; height:52px; background:var(--panel-2); border:none;}
+  .chat-empty .empty-icon svg{width:22px; height:22px;}
+  .chat-empty-title{font-size:18px; font-weight:700;}
+  .chat-empty-desc{font-size:13.5px; color:var(--ink-soft); line-height:1.6;}
+
+  .messages{padding:24px; display:flex; flex-direction:column; gap:18px; max-width:760px; margin:0 auto; width:100%;}
+  .msg{display:flex; gap:10px; max-width:100%;}
+  .msg.user{justify-content:flex-end;}
+  .msg-bubble{padding:11px 15px; border-radius:12px; font-size:14px; line-height:1.55; max-width:70%; white-space:pre-wrap; overflow-wrap:break-word;}
+  .msg.user .msg-bubble{background:var(--ink); color:#fff; border-bottom-right-radius:4px;}
+  .msg.assistant .msg-bubble{background:var(--panel); border:1px solid var(--border); border-bottom-left-radius:4px; max-width:100%;}
+  .msg.assistant{max-width:100%;}
+  .sources{display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;}
+  .source-chip{font-family:var(--mono); font-size:10.5px; color:var(--ink-soft); background:#fff; border:1px solid var(--border-strong); border-radius:6px; padding:3px 8px;}
+  .typing{display:flex; gap:4px; padding:4px 0;}
+  .typing span{width:6px; height:6px; border-radius:50%; background:var(--ink-faint); animation:bounce 1.2s infinite ease-in-out;}
+  .typing span:nth-child(2){animation-delay:.15s;}
+  .typing span:nth-child(3){animation-delay:.3s;}
+  @keyframes bounce{0%,80%,100%{transform:translateY(0); opacity:.5;} 40%{transform:translateY(-4px); opacity:1;}}
+
+  .chat-input-bar{border-top:1px solid var(--border); padding:14px 24px 18px;}
+  .chat-input-inner{max-width:760px; margin:0 auto;}
+  .chat-input-row{display:flex; align-items:center; gap:8px; border:1px solid var(--border-strong); border-radius:12px; padding:6px 6px 6px 16px; background:#fff;}
+  .chat-input-row input{flex:1; border:none; outline:none; font-size:14px; background:transparent; color:var(--ink);}
+  .chat-input-row input::placeholder{color:var(--ink-faint);}
+  .chat-input-row input:disabled{color:var(--ink-faint);}
+  .send-btn{width:34px; height:34px; border-radius:9px; border:none; flex-shrink:0; background:var(--panel-2); color:var(--ink-faint); cursor:not-allowed; display:flex; align-items:center; justify-content:center; transition:background .15s ease, color .15s ease;}
+  .send-btn svg{width:15px; height:15px;}
+  .send-btn.ready{background:var(--ink); color:#fff; cursor:pointer;}
+  .chat-disclaimer{text-align:center; font-size:11px; color:var(--ink-faint); margin-top:9px;}
+
+  /* ---------- Model gallery modal ---------- */
+  .modal-overlay{position:fixed; inset:0; background:rgba(17,17,17,.45); display:none; align-items:center; justify-content:center; z-index:100; padding:20px;}
+  .modal-overlay.show{display:flex;}
+  .modal-panel{background:#fff; border-radius:16px; max-width:560px; width:100%; max-height:82vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,.25); position:relative;}
+  .modal-head{display:flex; align-items:center; justify-content:space-between; padding:18px 22px; border-bottom:1px solid var(--border);}
+  .modal-title{font-size:16px; font-weight:700; margin:0;}
+  .modal-close{background:none; border:none; cursor:pointer; color:var(--ink-faint); padding:4px; border-radius:6px;}
+  .modal-close:hover{background:var(--panel-2); color:var(--ink);}
+  .modal-close svg{width:18px; height:18px;}
+  .modal-body{overflow-y:auto; padding:14px 22px 20px; display:flex; flex-direction:column; gap:10px;}
+  .modal-note{font-size:12px; color:var(--ink-soft); background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:9px 12px; margin-bottom:2px; line-height:1.5;}
+
+  .model-card{border:1px solid var(--border); border-radius:12px; padding:14px 16px; display:flex; align-items:flex-start; justify-content:space-between; gap:14px;}
+  .model-card.active{border-color:var(--ink); background:var(--panel);}
+  .model-card-info{min-width:0;}
+  .model-card-name{font-size:14px; font-weight:700; display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  .badge{font-family:var(--mono); font-size:10px; font-weight:600; padding:2px 7px; border-radius:5px; background:var(--panel-2); color:var(--ink-soft); white-space:nowrap;}
+  .badge-gated{background:#fef3c7; color:#92400e;}
+  .badge-cached{background:var(--green-bg); color:#15803d;}
+  .badge-default{background:#ede9fe; color:#6d28d9;}
+  .model-card-pub{font-size:11.5px; color:var(--ink-faint); margin-top:1px;}
+  .model-card-notes{font-size:12px; color:var(--ink-soft); line-height:1.5; margin-top:7px;}
+  .model-card-action{flex-shrink:0;}
+
+  .loading-overlay{position:absolute; inset:0; background:rgba(255,255,255,.85); display:none; flex-direction:column; align-items:center; justify-content:center; gap:12px; border-radius:16px; z-index:5;}
+  .loading-overlay.show{display:flex;}
+  .loading-overlay .spinner{width:22px; height:22px; border-width:3px;}
+  .loading-overlay-text{font-size:13px; color:var(--ink-soft); text-align:center; max-width:280px; padding:0 20px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+      </div>
+      <span class="brand-name">DocMind</span>
+    </div>
+    <nav class="tabs">
+      <button class="tab-btn active" data-tab="chat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Chat
+      </button>
+      <button class="tab-btn" data-tab="documents">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+        Documents
+      </button>
+    </nav>
+  </div>
+  <div class="header-status">
+    <span class="status-chip">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+      <span id="doc-count">0 docs</span>
+    </span>
+    <span class="divider-dot">|</span>
+    <span class="status-chip">
+      <span class="dot" id="status-dot"></span>
+      <span id="status-text">Checking...</span>
+    </span>
+  </div>
+</header>
+
+<!-- ================= DOCUMENTS VIEW ================= -->
+<main id="view-documents" class="active">
+  <div class="docs-wrap">
+    <h1 class="page-title">Knowledge Base</h1>
+    <p class="page-sub">Manage the documents and videos your assistant can learn from.</p>
+
+    <div class="cards-row">
+      <div class="card">
+        <div class="dropzone" id="dropzone">
+          <div class="dropzone-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.9A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m16 16-4-4-4 4"/></svg>
+          </div>
+          <div class="dz-title">Upload a Document</div>
+          <div class="dz-desc">Drag &amp; drop your file here, or click to browse.</div>
+          <div class="dz-types">PDF, DOCX, TXT, MD</div>
+          <button class="btn btn-outline" id="browse-btn" type="button">Browse Files</button>
+          <input type="file" id="file-input" accept=".pdf,.docx,.txt,.md" />
+        </div>
+      </div>
+
+      <div class="card icon-card">
+        <div class="icon-card-head">
+          <div class="card-icon icon-yt">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8ZM9.6 15.6V8.4l6.3 3.6Z"/></svg>
+          </div>
+          <div>
+            <p class="card-title">YouTube Video</p>
+            <p class="card-sub">Ingest a video transcript</p>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="input-row">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            <input type="text" id="yt-url" placeholder="https://youtube.com/watch?v=..." />
+          </div>
+          <button class="btn btn-disabled btn-full" id="yt-btn" disabled>Process Transcript</button>
+        </div>
+      </div>
+
+      <div class="card icon-card">
+        <div class="icon-card-head">
+          <div class="card-icon icon-web">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10Z"/></svg>
+          </div>
+          <div>
+            <p class="card-title">Web Page</p>
+            <p class="card-sub">Ingest an article or blog post</p>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="input-row">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            <input type="text" id="web-url" placeholder="https://example.com/article" />
+          </div>
+          <button class="btn btn-disabled btn-full" id="web-btn" disabled>Ingest Page</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="status-banner empty" id="status-banner">
+      <div class="status-banner-icon" id="status-banner-icon"></div>
+      <div class="status-banner-text">
+        <p class="status-banner-title" id="status-banner-title">Checking knowledge base…</p>
+        <p class="status-banner-desc" id="status-banner-desc">One moment.</p>
+      </div>
+      <div class="status-banner-action">
+        <button class="btn btn-dark" id="build-btn">Create Embeddings</button>
+      </div>
+    </div>
+
+    <h2 class="section-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+      Ingested Documents
+    </h2>
+    <div class="doc-list-card" id="doc-list-card"><!-- populated by JS --></div>
+  </div>
+</main>
+
+<!-- ================= CHAT VIEW ================= -->
+<main id="view-chat">
+  <aside class="kb-sidebar">
+    <div class="models-section">
+      <p class="models-section-title">Models</p>
+      <button class="model-row" id="model-row-llm">
+        <div class="model-row-left">
+          <div class="model-row-label">Generation</div>
+          <div class="model-row-value" id="active-llm-label">Loading…</div>
+        </div>
+        <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+      <button class="model-row" id="model-row-embed">
+        <div class="model-row-left">
+          <div class="model-row-label">Embedding</div>
+          <div class="model-row-value" id="active-embed-label">Loading…</div>
+        </div>
+        <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+    </div>
+
+    <div class="kb-header">
+      <div class="kb-header-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+        Knowledge Base
+      </div>
+      <span class="kb-count" id="kb-count">0 items</span>
+    </div>
+    <div class="kb-list" id="kb-list"><!-- populated by JS --></div>
+    <div class="kb-footer">
+      <button class="kb-manage-btn" data-tab="documents">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 12v6"/><path d="M9 15h6"/></svg>
+        Manage Documents
+      </button>
+    </div>
+  </aside>
+
+  <div class="chat-main">
+    <div class="stale-banner" id="stale-banner">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+      <span>Your knowledge base may be out of date — recent changes haven't been embedded yet.</span>
+      <button data-tab="documents">Update now</button>
+    </div>
+    <div class="chat-scroll" id="chat-scroll">
+      <div class="chat-empty" id="chat-empty">
+        <div class="empty-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+        </div>
+        <div class="chat-empty-title" id="chat-empty-title">Your knowledge base is empty</div>
+        <div class="chat-empty-desc" id="chat-empty-desc">
+          DocMind is a research assistant powered by your documents. Upload PDFs, Word files, or ingest YouTube videos and web pages to get started.
+        </div>
+        <button class="btn btn-dark" id="chat-empty-cta" data-tab="documents">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;vertical-align:-2px;margin-right:6px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 12v6"/><path d="M9 15h6"/></svg>
+          <span id="chat-empty-cta-label">Upload First Document</span>
+        </button>
+      </div>
+      <div class="messages" id="messages" style="display:none;"></div>
+    </div>
+
+    <div class="chat-input-bar">
+      <div class="chat-input-inner">
+        <div class="chat-input-row">
+          <input type="text" id="chat-input" placeholder="Upload documents to start asking questions" disabled />
+          <button class="send-btn" id="send-btn" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+          </button>
+        </div>
+        <p class="chat-disclaimer">DocMind can make mistakes. Always verify information using the provided source citations.</p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ================= MODEL GALLERY MODAL ================= -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal-panel">
+    <div class="modal-head">
+      <h3 class="modal-title" id="modal-title">Choose a Model</h3>
+      <button class="modal-close" id="modal-close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="modal-body"><!-- populated by JS --></div>
+    <div class="loading-overlay" id="modal-loading">
+      <div class="spinner dark"></div>
+      <div class="loading-overlay-text" id="modal-loading-text">Loading model… this can take a few minutes on first use.</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   DocMind Chat — single-page frontend
+   Talks directly to the FastAPI backend (see app/main.py).
+   ============================================================ */
+const API_BASE = window.location.origin.includes(':8000') || window.location.protocol === 'file:'
+  ? 'http://localhost:8000'
+  : window.location.origin;
+
+let documents = [];
+let chatHistory = [];
+let modelCatalog = { llms: [], embeddings: [], active_llm: null, active_embedding: null, backend: 'huggingface' };
+let indexStatus = { index_status: 'empty', embedded_doc_count: 0, document_count_on_disk: 0, last_built_at: null };
+let modalKind = null; // 'llm' | 'embedding'
+
+/* ---------------- Tabs ---------------- */
+function setTab(name){
+  document.querySelectorAll('.tab-btn[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  document.getElementById('view-chat').classList.toggle('active', name === 'chat');
+  document.getElementById('view-documents').classList.toggle('active', name === 'documents');
+}
+document.querySelectorAll('[data-tab]').forEach(el => {
+  el.addEventListener('click', () => setTab(el.dataset.tab));
+});
+
+/* ---------------- Toast ---------------- */
+let toastTimer;
+function showToast(msg, isError=false){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (isError ? ' error' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3800);
+}
+
+/* ---------------- Health check ---------------- */
+async function checkHealth(){
+  const dot = document.getElementById('status-dot');
+  const text = document.getElementById('status-text');
+  try{
+    const res = await fetch(`${API_BASE}/health`);
+    if(!res.ok) throw new Error();
+    dot.classList.remove('offline');
+    text.textContent = 'System Ready';
+  }catch(e){
+    dot.classList.add('offline');
+    text.textContent = 'Backend Offline';
+  }
+}
+
+/* ---------------- Load everything ---------------- */
+async function loadAll(){
+  await Promise.all([loadDocuments(), loadModels(), loadEmbeddingStatus()]);
+}
+
+async function loadDocuments(){
+  try{
+    const res = await fetch(`${API_BASE}/documents`);
+    const data = await res.json();
+    documents = data.documents || [];
+  }catch(e){ documents = []; }
+  renderDocCount();
+  renderDocList();
+  renderKbSidebar();
+}
+
+async function loadModels(){
+  try{
+    const res = await fetch(`${API_BASE}/models`);
+    modelCatalog = await res.json();
+  }catch(e){ /* leave stale catalog */ }
+  renderModelRows();
+}
+
+async function loadEmbeddingStatus(){
+  try{
+    const res = await fetch(`${API_BASE}/embeddings/status`);
+    indexStatus = await res.json();
+  }catch(e){ /* leave stale status */ }
+  renderStatusBanner();
+  renderChatGate();
+}
+
+/* ---------------- Documents ---------------- */
+function renderDocCount(){
+  document.getElementById('doc-count').textContent = `${documents.length} doc${documents.length === 1 ? '' : 's'}`;
+}
+function fmtSize(bytes){
+  if(bytes < 1024) return `${bytes} B`;
+  if(bytes < 1024*1024) return `${(bytes/1024).toFixed(1)} KB`;
+  return `${(bytes/1024/1024).toFixed(1)} MB`;
+}
+function docTypeIcon(sourceType){
+  const icons = {
+    upload: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>`,
+    youtube: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8ZM9.6 15.6V8.4l6.3 3.6Z"/></svg>`,
+    web: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10Z"/></svg>`,
+  };
+  return icons[sourceType] || icons.upload;
+}
+
+function renderDocList(){
+  const card = document.getElementById('doc-list-card');
+  if(documents.length === 0){
+    card.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        </div>
+        <div class="empty-title">No documents yet</div>
+        <div class="empty-desc">Upload files, or ingest YouTube videos and web pages above to build your knowledge base.</div>
+      </div>`;
+    return;
+  }
+  card.innerHTML = documents.map(d => `
+    <div class="doc-row">
+      <div class="doc-row-left">
+        <div class="doc-type-icon ${d.source_type}">${docTypeIcon(d.source_type)}</div>
+        <span class="doc-name" title="${d.source_url || d.filename}">${d.filename}</span>
+      </div>
+      <div style="display:flex;align-items:center;">
+        <span class="doc-meta">${fmtSize(d.size_bytes)}</span>
+        <div class="doc-row-actions">
+          <button class="icon-btn" title="Delete" onclick="deleteDocument('${d.filename.replace(/'/g, "\\'")}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderKbSidebar(){
+  document.getElementById('kb-count').textContent = `${documents.length} item${documents.length === 1 ? '' : 's'}`;
+  const list = document.getElementById('kb-list');
+  if(documents.length === 0){
+    list.innerHTML = `
+      <div class="kb-empty">
+        <div class="empty-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 12v6"/><path d="M9 15h6"/></svg>
+        </div>
+        <div class="kb-empty-title">No documents found.</div>
+        <div class="kb-empty-desc">Add files to start querying.</div>
+        <button class="btn btn-outline btn-sm" onclick="setTab('documents')">Go to Documents</button>
+      </div>`;
+    return;
+  }
+  list.innerHTML = documents.map(d => `
+    <div class="kb-item" title="${d.filename}">
+      ${docTypeIcon(d.source_type)}
+      <span>${d.filename}</span>
+    </div>
+  `).join('');
+}
+
+async function deleteDocument(filename){
+  try{
+    const res = await fetch(`${API_BASE}/documents/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.detail || 'Delete failed');
+    showToast(data.detail);
+    await loadDocuments();
+    await loadEmbeddingStatus();
+  }catch(e){
+    showToast(e.message, true);
+  }
+}
+
+/* ---------------- Index status banner + Create Embeddings ---------------- */
+function fmtDate(iso){
+  if(!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleString(undefined, { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+
+function renderStatusBanner(){
+  const banner = document.getElementById('status-banner');
+  const icon = document.getElementById('status-banner-icon');
+  const title = document.getElementById('status-banner-title');
+  const desc = document.getElementById('status-banner-desc');
+  const btn = document.getElementById('build-btn');
+  const status = indexStatus.index_status;
+  const onDisk = indexStatus.document_count_on_disk || 0;
+
+  banner.className = 'status-banner ' + status;
+
+  const icons = {
+    empty: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>`,
+    stale: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>`,
+    synced: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>`,
+  };
+  icon.innerHTML = icons[status] || icons.empty;
+
+  if(status === 'synced'){
+    title.textContent = 'Knowledge base up to date';
+    desc.textContent = `${indexStatus.embedded_doc_count} document(s) embedded${indexStatus.last_built_at ? ' on ' + fmtDate(indexStatus.last_built_at) : ''}.`;
+    btn.textContent = 'Rebuild Anyway';
+    btn.className = 'btn btn-outline';
+    btn.disabled = onDisk === 0;
+  }else if(status === 'stale'){
+    title.textContent = 'Embeddings out of date';
+    desc.textContent = 'Documents have changed since the last build. Rebuild to include the latest changes.';
+    btn.textContent = 'Rebuild Embeddings';
+    btn.className = 'btn btn-amber';
+    btn.disabled = onDisk === 0;
+  }else{
+    title.textContent = onDisk > 0 ? 'Ready to build your knowledge base' : 'No embeddings yet';
+    desc.textContent = onDisk > 0
+      ? `${onDisk} document(s) waiting to be embedded.`
+      : 'Ingest a document, YouTube video, or web page above, then build your searchable index.';
+    btn.textContent = 'Create Embeddings';
+    btn.className = 'btn btn-dark';
+    btn.disabled = onDisk === 0;
+  }
+
+  document.getElementById('stale-banner').classList.toggle('show', status === 'stale');
+}
+
+document.getElementById('build-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('build-btn');
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Building…';
+  try{
+    const res = await fetch(`${API_BASE}/embeddings/build`, { method: 'POST' });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.detail || 'Build failed');
+    showToast(data.detail);
+    await loadEmbeddingStatus();
+  }catch(e){
+    showToast(e.message, true);
+    btn.textContent = originalText;
+  }
+});
+
+/* ---------------- Upload (drag & drop / browse) ---------------- */
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('file-input');
+document.getElementById('browse-btn').addEventListener('click', (e) => { e.stopPropagation(); fileInput.click(); });
+dropzone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', () => { if(fileInput.files.length) uploadFile(fileInput.files[0]); fileInput.value = ''; });
+['dragenter','dragover'].forEach(evt => dropzone.addEventListener(evt, (e) => { e.preventDefault(); e.stopPropagation(); dropzone.classList.add('drag'); }));
+['dragleave','drop'].forEach(evt => dropzone.addEventListener(evt, (e) => { e.preventDefault(); e.stopPropagation(); dropzone.classList.remove('drag'); }));
+dropzone.addEventListener('drop', (e) => { const files = e.dataTransfer.files; if(files.length) uploadFile(files[0]); });
+
+async function uploadFile(file){
+  const allowed = ['.pdf','.docx','.txt','.md'];
+  const ext = '.' + file.name.split('.').pop().toLowerCase();
+  if(!allowed.includes(ext)){ showToast(`Unsupported file type: ${ext}`, true); return; }
+  showToast(`Uploading "${file.name}"…`);
+  const form = new FormData();
+  form.append('file', file);
+  try{
+    const res = await fetch(`${API_BASE}/ingest/document`, { method: 'POST', body: form });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.detail || 'Upload failed');
+    showToast(data.detail);
+    await loadDocuments();
+    await loadEmbeddingStatus();
+  }catch(e){ showToast(e.message, true); }
+}
+
+/* ---------------- YouTube ingest ---------------- */
+const ytUrlInput = document.getElementById('yt-url');
+const ytBtn = document.getElementById('yt-btn');
+function isLikelyYoutubeUrl(v){ return /youtube\.com\/watch\?v=|youtu\.be\//.test(v.trim()); }
+ytUrlInput.addEventListener('input', () => {
+  const valid = isLikelyYoutubeUrl(ytUrlInput.value);
+  ytBtn.disabled = !valid;
+  ytBtn.className = 'btn btn-full ' + (valid ? 'btn-dark' : 'btn-disabled');
+});
+ytBtn.addEventListener('click', async () => {
+  const url = ytUrlInput.value.trim();
+  if(!isLikelyYoutubeUrl(url)) return;
+  ytBtn.disabled = true;
+  ytBtn.innerHTML = '<span class="spinner"></span> Processing…';
+  try{
+    const res = await fetch(`${API_BASE}/ingest/youtube`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ url }) });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.detail || 'Transcript ingestion failed');
+    showToast(data.detail);
+    ytUrlInput.value = '';
+    await loadDocuments();
+    await loadEmbeddingStatus();
+  }catch(e){ showToast(e.message, true); }
+  finally{
+    ytBtn.textContent = 'Process Transcript';
+    const valid = isLikelyYoutubeUrl(ytUrlInput.value);
+    ytBtn.disabled = !valid;
+    ytBtn.className = 'btn btn-full ' + (valid ? 'btn-dark' : 'btn-disabled');
+  }
+});
+
+/* ---------------- Web page ingest ---------------- */
+const webUrlInput = document.getElementById('web-url');
+const webBtn = document.getElementById('web-btn');
+function isLikelyUrl(v){ v = v.trim(); return /^https?:\/\/.+\..+/.test(v) && !isLikelyYoutubeUrl(v); }
+webUrlInput.addEventListener('input', () => {
+  const valid = isLikelyUrl(webUrlInput.value);
+  webBtn.disabled = !valid;
+  webBtn.className = 'btn btn-full ' + (valid ? 'btn-dark' : 'btn-disabled');
+});
+webBtn.addEventListener('click', async () => {
+  const url = webUrlInput.value.trim();
+  if(!isLikelyUrl(url)) return;
+  webBtn.disabled = true;
+  webBtn.innerHTML = '<span class="spinner"></span> Ingesting…';
+  try{
+    const res = await fetch(`${API_BASE}/ingest/web`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ url }) });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.detail || 'Web ingestion failed');
+    showToast(data.detail);
+    webUrlInput.value = '';
+    await loadDocuments();
+    await loadEmbeddingStatus();
+  }catch(e){ showToast(e.message, true); }
+  finally{
+    webBtn.textContent = 'Ingest Page';
+    const valid = isLikelyUrl(webUrlInput.value);
+    webBtn.disabled = !valid;
+    webBtn.className = 'btn btn-full ' + (valid ? 'btn-dark' : 'btn-disabled');
+  }
+});
+
+/* ---------------- Model gallery ---------------- */
+function shortModelName(id, list){
+  const entry = (list || []).find(m => m.id === id);
+  return entry ? entry.name : (id || '—');
+}
+function renderModelRows(){
+  document.getElementById('active-llm-label').textContent = shortModelName(modelCatalog.active_llm, modelCatalog.llms);
+  document.getElementById('active-embed-label').textContent = shortModelName(modelCatalog.active_embedding, modelCatalog.embeddings);
+}
+
+const modalOverlay = document.getElementById('modal-overlay');
+const modalTitle = document.getElementById('modal-title');
+const modalBody = document.getElementById('modal-body');
+const modalLoading = document.getElementById('modal-loading');
+const modalLoadingText = document.getElementById('modal-loading-text');
+
+function openModal(kind){
+  modalKind = kind;
+  modalTitle.textContent = kind === 'llm' ? 'Choose Generation Model' : 'Choose Embedding Model';
+  const list = kind === 'llm' ? modelCatalog.llms : modelCatalog.embeddings;
+  const activeId = kind === 'llm' ? modelCatalog.active_llm : modelCatalog.active_embedding;
+  const isOllama = modelCatalog.backend === 'ollama';
+  const fetchVerb = isOllama ? 'pull it via Ollama' : 'download it from HuggingFace';
+
+  const note = kind === 'llm'
+    ? `<div class="modal-note">Switching models unloads the current one and loads the new one${isOllama ? ', pulling it in the ollama container' : ''} — this can take a while on first use (${fetchVerb}), and is fast on later switches.</div>`
+    : `<div class="modal-note">Switching the embedding model does <strong>not</strong> re-embed your documents automatically. You'll need to click "Create Embeddings" on the Documents page afterwards.</div>`;
+
+  modalBody.innerHTML = note + list.map(m => `
+    <div class="model-card ${m.id === activeId ? 'active' : ''}">
+      <div class="model-card-info">
+        <div class="model-card-name">
+          ${m.name}
+          <span class="badge">${m.params}</span>
+          ${m.default ? '<span class="badge badge-default">Default</span>' : ''}
+          ${m.gated ? '<span class="badge badge-gated">Gated · needs HF_TOKEN</span>' : ''}
+          ${m.cached ? '<span class="badge badge-cached">Cached</span>' : `<span class="badge">${isOllama ? 'Pulls' : 'Downloads'} on first use</span>`}
+        </div>
+        <div class="model-card-pub">${m.publisher}${m.context_window ? ' · ' + m.context_window + ' ctx' : ''}${m.dims ? ' · ' + m.dims + 'd' : ''}</div>
+        <div class="model-card-notes">${m.notes}</div>
+      </div>
+      <div class="model-card-action">
+        ${m.id === activeId
+          ? '<button class="btn btn-outline btn-sm" disabled>Active</button>'
+          : `<button class="btn btn-dark btn-sm" onclick="selectModel('${kind}', '${m.id.replace(/'/g, "\\'")}')">Select</button>`
+        }
+      </div>
+    </div>
+  `).join('');
+
+  modalOverlay.classList.add('show');
+}
+
+document.getElementById('model-row-llm').addEventListener('click', () => openModal('llm'));
+document.getElementById('model-row-embed').addEventListener('click', () => openModal('embedding'));
+document.getElementById('modal-close').addEventListener('click', () => modalOverlay.classList.remove('show'));
+modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) modalOverlay.classList.remove('show'); });
+
+async function selectModel(kind, modelId){
+  modalLoadingText.textContent = kind === 'llm'
+    ? `Loading ${modelId}… this can take a few minutes on first use.`
+    : `Loading ${modelId}…`;
+  modalLoading.classList.add('show');
+  const endpoint = kind === 'llm' ? '/models/llm' : '/models/embedding';
+  try{
+    const res = await fetch(`${API_BASE}${endpoint}`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ model_id: modelId }) });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.detail || 'Model switch failed');
+    showToast(data.detail);
+    await loadModels();
+    await loadEmbeddingStatus();
+    modalOverlay.classList.remove('show');
+  }catch(e){
+    showToast(e.message, true);
+  }finally{
+    modalLoading.classList.remove('show');
+  }
+}
+
+/* ---------------- Chat ---------------- */
+const chatInput = document.getElementById('chat-input');
+const sendBtn = document.getElementById('send-btn');
+const messagesEl = document.getElementById('messages');
+const chatEmptyEl = document.getElementById('chat-empty');
+const chatScrollEl = document.getElementById('chat-scroll');
+
+function updateSendState(){
+  const ready = !chatInput.disabled && chatInput.value.trim().length > 0;
+  sendBtn.disabled = !ready;
+  sendBtn.classList.toggle('ready', ready);
+}
+chatInput.addEventListener('input', updateSendState);
+chatInput.addEventListener('keydown', (e) => { if(e.key === 'Enter' && !sendBtn.disabled) sendMessage(); });
+sendBtn.addEventListener('click', () => { if(!sendBtn.disabled) sendMessage(); });
+
+function renderChatGate(){
+  const hasEmbeddings = indexStatus.index_status !== 'empty';
+  const input = document.getElementById('chat-input');
+  const title = document.getElementById('chat-empty-title');
+  const desc = document.getElementById('chat-empty-desc');
+  const cta = document.getElementById('chat-empty-cta');
+  const ctaLabel = document.getElementById('chat-empty-cta-label');
+
+  input.disabled = !hasEmbeddings;
+  input.placeholder = hasEmbeddings ? 'Ask a question about your documents…' : 'Build embeddings to start asking questions';
+  updateSendState();
+
+  if(!chatStarted){
+    if(hasEmbeddings){
+      title.textContent = 'Ask a question';
+      desc.textContent = `Your knowledge base has ${indexStatus.embedded_doc_count} document(s) embedded and ready to search.`;
+      cta.style.display = 'none';
+    }else if(documents.length > 0){
+      title.textContent = 'Embeddings not built yet';
+      desc.textContent = `You have ${documents.length} document(s) ingested. Go to Documents and click "Create Embeddings" to make them searchable.`;
+      ctaLabel.textContent = 'Go to Documents';
+      cta.style.display = 'inline-flex';
+    }else{
+      title.textContent = 'Your knowledge base is empty';
+      desc.textContent = 'DocMind is a research assistant powered by your documents. Upload PDFs, Word files, or ingest YouTube videos and web pages to get started.';
+      ctaLabel.textContent = 'Upload First Document';
+      cta.style.display = 'inline-flex';
+    }
+  }
+}
+
+// Tracks whether the chat conversation has started, independent of
+// chatHistory's contents/timing — appendMessage previously checked
+// chatHistory.length === 0 to decide whether to swap from the empty
+// state to the message list, but sendMessage() pushes to chatHistory
+// BEFORE calling appendMessage() for that very message, so the check was
+// always false and the message list never appeared (it was rendered into
+// a div stuck at display:none behind the still-visible empty state).
+let chatStarted = false;
+
+function appendMessage(role, html){
+  if(!chatStarted){
+    chatStarted = true;
+    chatEmptyEl.style.display = 'none';
+    messagesEl.style.display = 'flex';
+  }
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  div.innerHTML = `<div class="msg-bubble">${html}</div>`;
+  messagesEl.appendChild(div);
+  chatScrollEl.scrollTop = chatScrollEl.scrollHeight;
+  return div;
+}
+function escapeHtml(str){ const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
+
+async function sendMessage(){
+  const question = chatInput.value.trim();
+  if(!question) return;
+  chatInput.value = '';
+  updateSendState();
+
+  chatHistory.push({role:'user', content: question});
+  appendMessage('user', escapeHtml(question));
+  const typingDiv = appendMessage('assistant', '<div class="typing"><span></span><span></span><span></span></div>');
+
+  // CPU inference on small models can genuinely take a few minutes, but if
+  // it's still hanging after this long, something's wrong (e.g. the
+  // backend was OOM-killed mid-generation) — fail with a clear message
+  // instead of leaving the typing indicator spinning forever.
+  const TIMEOUT_MS = 6 * 60 * 1000;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+  try{
+    const res = await fetch(`${API_BASE}/query`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ question }),
+      signal: controller.signal,
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.detail || 'Query failed');
+
+    let sourcesHtml = '';
+    if(data.sources && data.sources.length){
+      sourcesHtml = '<div class="sources">' + data.sources.map(s =>
+        `<span class="source-chip">${escapeHtml(s.source || 'unknown')} · ${(s.score*100).toFixed(0)}%</span>`
+      ).join('') + '</div>';
+    }
+    typingDiv.querySelector('.msg-bubble').innerHTML = escapeHtml(data.answer) + sourcesHtml;
+    chatHistory.push({role:'assistant', content: data.answer});
+    if(data.index_stale){
+      document.getElementById('stale-banner').classList.add('show');
+    }
+  }catch(e){
+    let message;
+    if(e.name === 'AbortError'){
+      message = `Timed out after ${TIMEOUT_MS/60000} minutes waiting for a response. The model may be overloaded — try a shorter question, a lighter model from the gallery, or check the backend logs.`;
+    }else if(e instanceof TypeError){
+      message = 'Lost connection to the backend. It may have crashed or run out of memory mid-generation — check `docker compose logs` (look for an OOM kill) and try again, possibly with a smaller model from the gallery.';
+    }else{
+      message = e.message;
+    }
+    typingDiv.querySelector('.msg-bubble').innerHTML = `<span style="color:#dc2626;">${escapeHtml(message)}</span>`;
+    checkHealth();
+  }finally{
+    clearTimeout(timeoutId);
+  }
+}
+
+/* ---------------- Init ---------------- */
+checkHealth();
+loadAll();
+setInterval(checkHealth, 15000);
+setInterval(loadEmbeddingStatus, 20000);
+</script>
+</body>
+</html>

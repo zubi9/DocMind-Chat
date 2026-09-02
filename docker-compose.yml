@@ -1,0 +1,33 @@
+services:
+  docmind-api:
+    build: .
+    image: docmind-chat:latest
+    container_name: docmind-chat
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    volumes:
+      # Persists ingested documents, the Chroma vector DB, and the
+      # HuggingFace model cache across container restarts/rebuilds.
+      - ./data:/app/data
+    restart: unless-stopped
+
+    # --- Recommended: cap container memory so an out-of-memory event is a
+    # clear, diagnosable kill (docker inspect shows OOMKilled: true, exit
+    # code 137) instead of the process silently dying with no traceback.
+    # CPU inference of even small LLMs (phi-2, Phi-4-mini, Llama 3.2 3B)
+    # can transiently need several GB during generation — if you hit OOM
+    # kills, raise this (and Docker Desktop's overall VM memory limit,
+    # Settings > Resources) rather than lowering it further.
+    # mem_limit: 8g
+
+    # --- Optional: uncomment to enable GPU acceleration for the LLM ---
+    # (requires the NVIDIA Container Toolkit installed on the host)
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

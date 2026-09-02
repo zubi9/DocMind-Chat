@@ -1,0 +1,47 @@
+# Slim dependency set for the Ollama backend (see Dockerfile.ollama /
+# docker-compose.ollama.yml). Deliberately excludes torch, transformers,
+# accelerate, and sentencepiece — all inference happens in the separate
+# `ollama` container over HTTP, so this image never loads model weights
+# in-process and stays lightweight (~10x smaller image, no OOM risk from
+# in-process generation).
+
+# --- Web framework ---
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+python-multipart==0.0.19
+pydantic==2.10.3
+pydantic-settings==2.7.0
+
+# --- LlamaIndex core + Ollama integrations only ---
+llama-index-core==0.12.9
+llama-index-vector-stores-chroma==0.4.1
+# Hybrid (vector + keyword) retrieval — pure Python/numpy, no torch needed,
+# safe to include in this slim image. See requirements.txt for the same
+# note about this being an unverified-live pin; the app falls back to
+# vector-only retrieval automatically if this import fails at runtime.
+llama-index-retrievers-bm25==0.5.2
+llama-index-llms-ollama==0.5.0
+llama-index-embeddings-ollama==0.5.0
+
+# --- Vector store ---
+chromadb
+
+# --- Ollama backend client (used by app/core/ollama_client.py) ---
+requests==2.32.3
+
+# --- Document parsing ---
+pypdf==5.1.0
+python-docx==1.1.2
+pdfplumber==0.11.4
+pdf2image==1.17.0
+pytesseract==0.3.13
+pillow==11.0.0
+
+# --- YouTube ingestion ---
+youtube-transcript-api==1.2.4
+
+# --- Web page ingestion ---
+trafilatura==1.12.2
+
+# --- misc ---
+python-dotenv==1.0.1
