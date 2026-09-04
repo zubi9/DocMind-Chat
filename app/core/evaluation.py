@@ -129,15 +129,36 @@ def _keyword_coverage(answer: str, keywords: list[str] | None) -> float | None:
 
 def _retrieval_metrics(source_names: list[str], expected_sources: list[str] | None) -> dict:
     if not expected_sources:
-        return {"retrieval_hit": None, "retrieval_mrr": None}
-    expected_set = {e.lower() for e in expected_sources}
-    hit = any(name.lower() in expected_set for name in source_names)
+        return {
+            "retrieval_hit": None,
+            "retrieval_mrr": None,
+            "retrieval_recall": None,
+            "retrieval_precision": None,
+            "retrieval_ndcg": None,
+        }
+    expected_set = {e.casefold() for e in expected_sources}
+    retrieved_set = {name.casefold() for name in source_names}
+    relevant_count = len(retrieved_set & expected_set)
+    hit = relevant_count > 0
     mrr = 0.0
     for rank, name in enumerate(source_names, start=1):
-        if name.lower() in expected_set:
+        if name.casefold() in expected_set:
             mrr = round(1.0 / rank, 4)
             break
-    return {"retrieval_hit": hit, "retrieval_mrr": mrr}
+
+    recall = relevant_count / len(expected_set)
+    precision = relevant_count / len(retrieved_set) if retrieved_set else 0.0
+    dcg = sum(1.0 / math.log2(rank + 1) for rank, name in enumerate(source_names, start=1) if name.casefold() in expected_set)
+    ideal_count = min(len(expected_set), len(source_names))
+    ideal_dcg = sum(1.0 / math.log2(rank + 1) for rank in range(1, ideal_count + 1))
+    ndcg = dcg / ideal_dcg if ideal_dcg else 0.0
+    return {
+        "retrieval_hit": hit,
+        "retrieval_mrr": round(mrr, 4),
+        "retrieval_recall": round(recall, 4),
+        "retrieval_precision": round(precision, 4),
+        "retrieval_ndcg": round(ndcg, 4),
+    }
 
 
 _JUDGE_PROMPT = """You are grading an AI assistant's answer for a document Q&A system.
@@ -210,7 +231,7 @@ def evaluate_item(item: dict, use_llm_judge: bool = False) -> dict:
         "latency_s": latency_s,
         "index_stale": response.index_stale,
     }
-    result.update(_retrieval_metrics(source_names, item.get("expected_sources")))
+    result.update(_retrieval_metrics(source_names, item.get("expected_passages") or item.get("expected_sources")))
     result["keyword_coverage"] = _keyword_coverage(response.answer, item.get("must_include_keywords"))
     result["semantic_similarity"] = _semantic_similarity(response.answer, reference)
 
@@ -244,6 +265,9 @@ def run_evaluation(use_llm_judge: bool = False) -> dict:
         "avg_latency_s": _mean(results, "latency_s"),
         "retrieval_hit_rate": _mean(results, "retrieval_hit"),
         "avg_retrieval_mrr": _mean(results, "retrieval_mrr"),
+        "avg_retrieval_recall": _mean(results, "retrieval_recall"),
+        "avg_retrieval_precision": _mean(results, "retrieval_precision"),
+        "avg_retrieval_ndcg": _mean(results, "retrieval_ndcg"),
         "avg_keyword_coverage": _mean(results, "keyword_coverage"),
         "avg_semantic_similarity": _mean(results, "semantic_similarity"),
     }

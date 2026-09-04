@@ -61,6 +61,9 @@ def print_report(report: dict) -> None:
         ("Avg latency (s)", fmt(s.get("avg_latency_s"))),
         ("Retrieval hit rate", fmt(s.get("retrieval_hit_rate"), pct=True)),
         ("Avg retrieval MRR", fmt(s.get("avg_retrieval_mrr"))),
+        ("Avg retrieval recall", fmt(s.get("avg_retrieval_recall"), pct=True)),
+        ("Avg retrieval precision", fmt(s.get("avg_retrieval_precision"), pct=True)),
+        ("Avg retrieval nDCG", fmt(s.get("avg_retrieval_ndcg"))),
         ("Avg keyword coverage", fmt(s.get("avg_keyword_coverage"), pct=True)),
         ("Avg semantic similarity", fmt(s.get("avg_semantic_similarity"))),
     ]
@@ -84,6 +87,8 @@ def print_report(report: dict) -> None:
             bits.append(f"hit={'Y' if r['retrieval_hit'] else 'N'}")
         if r.get("keyword_coverage") is not None:
             bits.append(f"kw={fmt(r['keyword_coverage'], pct=True)}")
+        if r.get("retrieval_recall") is not None:
+            bits.append(f"recall={fmt(r['retrieval_recall'], pct=True)}")
         if r.get("semantic_similarity") is not None:
             bits.append(f"sim={fmt(r['semantic_similarity'])}")
         if r.get("judge_faithfulness") is not None:

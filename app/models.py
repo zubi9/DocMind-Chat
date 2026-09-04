@@ -115,7 +115,9 @@ class EvalDatasetItem(BaseModel):
     question: str
     reference_answer: Optional[str] = None
     expected_sources: Optional[list[str]] = None
+    expected_passages: Optional[list[str]] = None
     must_include_keywords: Optional[list[str]] = None
+    metadata: Optional[dict] = None
 
 
 class EvalDatasetResponse(BaseModel):
@@ -132,6 +134,9 @@ class EvalItemResult(BaseModel):
     index_stale: Optional[bool] = None
     retrieval_hit: Optional[bool] = None
     retrieval_mrr: Optional[float] = None
+    retrieval_recall: Optional[float] = None
+    retrieval_precision: Optional[float] = None
+    retrieval_ndcg: Optional[float] = None
     keyword_coverage: Optional[float] = None
     semantic_similarity: Optional[float] = None
     judge_faithfulness: Optional[float] = None
@@ -145,6 +150,9 @@ class EvalSummary(BaseModel):
     avg_latency_s: Optional[float] = None
     retrieval_hit_rate: Optional[float] = None
     avg_retrieval_mrr: Optional[float] = None
+    avg_retrieval_recall: Optional[float] = None
+    avg_retrieval_precision: Optional[float] = None
+    avg_retrieval_ndcg: Optional[float] = None
     avg_keyword_coverage: Optional[float] = None
     avg_semantic_similarity: Optional[float] = None
     avg_judge_faithfulness: Optional[float] = None

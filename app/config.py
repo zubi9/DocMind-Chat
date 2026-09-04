@@ -77,7 +77,7 @@ class Settings(BaseSettings):
     enable_hybrid_retrieval: bool = True
 
     # --- Supported ingestion file types ---
-    supported_extensions: tuple = (".pdf", ".docx", ".txt", ".md")
+    supported_extensions: tuple = (".pdf", ".docx", ".txt", ".md", ".json")
 
     def ensure_directories(self) -> None:
         """Create the data directories if they don't already exist."""

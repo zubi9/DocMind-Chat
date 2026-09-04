@@ -8,6 +8,7 @@ poppler-utils) are installed at Docker build time instead — see the
 Dockerfile.
 """
 import hashlib
+import json
 import logging
 import re
 import shutil
@@ -129,6 +130,22 @@ def load_single_document(file_path: Path) -> Document | None:
     if ext in (".txt", ".md"):
         text = file_path.read_text(encoding="utf-8", errors="ignore")
         return Document(text=text, metadata={"source": file_path.name, "type": "text"})
+
+    if ext == ".json":
+        try:
+            payload = json.loads(file_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as e:
+            logger.warning("Could not parse JSON %s: %s", file_path, e)
+            return None
+        if isinstance(payload, dict) and "_text" in payload:
+            text = str(payload["_text"])
+            source = str(payload.get("_source_id", file_path.name))
+            metadata = {k: v for k, v in payload.items() if k not in {"_text", "_source_id"}}
+            metadata.update({"source": source, "type": "json"})
+        else:
+            text = json.dumps(payload, indent=2, ensure_ascii=False)
+            metadata = {"source": file_path.name, "type": "json"}
+        return Document(text=text, metadata=metadata)
 
     if ext == ".docx":
         docx = DocxDocument(str(file_path))

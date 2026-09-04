@@ -304,9 +304,9 @@
           </div>
           <div class="dz-title">Upload a Document</div>
           <div class="dz-desc">Drag &amp; drop your file here, or click to browse.</div>
-          <div class="dz-types">PDF, DOCX, TXT, MD</div>
+          <div class="dz-types">PDF, DOCX, TXT, MD, JSON</div>
           <button class="btn btn-outline" id="browse-btn" type="button">Browse Files</button>
-          <input type="file" id="file-input" accept=".pdf,.docx,.txt,.md" />
+          <input type="file" id="file-input" accept=".pdf,.docx,.txt,.md,.json" />
         </div>
       </div>
 
@@ -707,7 +707,7 @@ fileInput.addEventListener('change', () => { if(fileInput.files.length) uploadFi
 dropzone.addEventListener('drop', (e) => { const files = e.dataTransfer.files; if(files.length) uploadFile(files[0]); });
 
 async function uploadFile(file){
-  const allowed = ['.pdf','.docx','.txt','.md'];
+  const allowed = ['.pdf','.docx','.txt','.md','.json'];
   const ext = '.' + file.name.split('.').pop().toLowerCase();
   if(!allowed.includes(ext)){ showToast(`Unsupported file type: ${ext}`, true); return; }
   showToast(`Uploading "${file.name}"…`);

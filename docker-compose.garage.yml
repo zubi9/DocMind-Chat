@@ -1,0 +1,4 @@
+services:
+  docmind-api:
+    volumes:
+      - ./data/garage_eval:/app/data

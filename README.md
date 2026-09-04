@@ -37,7 +37,7 @@ disk — so the system is predictable to operate, not just to demo.
 
 ## Features
 
-- 🔍 **Multi-source ingestion** — PDF (with OCR fallback), DOCX, TXT/Markdown, YouTube transcripts, and general web articles (boilerplate-stripped via `trafilatura`)
+- 🔍 **Multi-source ingestion** — PDF (with OCR fallback), DOCX, TXT/Markdown/JSON, YouTube transcripts, and general web articles (boilerplate-stripped via `trafilatura`)
 - 🧩 **Explicit embedding lifecycle** — ingestion just stages a source; a dedicated *Create Embeddings* step builds the index, and the UI flags when documents have changed since the last build
 - 🔄 **Live model switching** — swap between curated LLMs (Mistral-7B default, plus Phi-2/Phi-4-mini, Llama 3.2 1B/3B, SmolLM2 1.7B, Qwen 2.5) and embedding models (MiniLM, BGE-small, E5-small, GTE-small, Nomic) at runtime, no restart required
 - 📝 **JSON-configurable gallery** — the entire model list lives in `app/core/model_catalog.json`, not code — add, remove, or re-default a model with a JSON edit, no rebuild needed
@@ -176,6 +176,55 @@ on first use. Per question, you can specify any combination of:
 
 All metrics are skipped, not zeroed, for items missing the corresponding
 field — a partially-filled-in dataset still produces a useful report.
+
+### Importing GaRAGe
+
+GaRAGe can be imported from a separately downloaded
+`GaRAGe_benchmark.jsonl` file. Do not commit the benchmark contents to this
+repository; review the upstream dataset license before using or distributing
+it. The importer selects valid, answer-seeking, non-sensitive questions by
+default and stores the original GaRAGe annotations, including grounding
+passages, as per-item metadata:
+
+```bash
+python scripts/import_garage.py /path/to/GaRAGe_benchmark.jsonl --dry-run
+python scripts/import_garage.py /path/to/GaRAGe_benchmark.jsonl --limit 100 --seed 42
+python scripts/import_garage.py /path/to/GaRAGe_benchmark.jsonl \
+	--category Science --complexity "Multi-Hop"
+
+# Benchmark-faithful mode: index only grounding passages in an isolated folder
+python scripts/import_garage.py data/GaRAGe_benchmark.jsonl \
+	--limit 50 --seed 42 \
+	--output data/garage_eval/eval_dataset.json \
+	--corpus-dir data/garage_eval/user_docs
+```
+
+The output replaces `data/eval_dataset.json`, so ingest and index the
+corresponding documents before running the evaluation. `answer_generate` is
+used as the reference answer for semantic similarity and the optional local
+LLM judge. GaRAGe grounding passages are retained for traceability but are
+not injected into queries. Filename-based retrieval hit-rate and MRR remain
+unavailable unless an explicit mapping from GaRAGe passages to local
+filenames is added.
+
+Use `--question-tag`, `--topic-tag`, `--start-date`, `--end-date`, and
+`--limit`/`--seed` for reproducible subsets. Records excluded by default can
+be included explicitly with `--include-invalid`, `--include-false-premise`,
+`--include-non-seeking`, or `--include-sensitive`.
+
+The `--corpus-dir` option creates one JSON file per selected grounding passage.
+These files contain only passage text and source metadata, never the benchmark
+question or answer. Point `USER_DOCS_DIR` and `DATA_DIR` at the isolated
+`data/garage_eval` tree when starting a separate evaluation instance, then
+build embeddings before running `scripts/evaluate.py`. Retrieved passage IDs
+are compared with `evidence_correct == ANSWER-THE-QUESTION` to calculate
+answer-bearing passage hit and MRR.
+
+### Evaluation Report
+
+See the standalone [RAG evaluation report](docs/evaluation-report.md) for
+measured retrieval and generation performance, metric definitions, scope,
+limitations, and reproduction steps.
 
 ## Project Structure
 

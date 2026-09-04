@@ -21,7 +21,7 @@ _NEEDS_EMBEDDING_NOTE = "Click 'Create Embeddings' on the Documents page to add 
 
 @router.post("/document", response_model=IngestResponse)
 async def ingest_document(file: UploadFile = File(...)) -> IngestResponse:
-    """Uploads a PDF/DOCX/TXT/MD file and saves it. Does NOT embed it — see /embeddings/build."""
+    """Uploads a PDF/DOCX/TXT/MD/JSON file and saves it. Does NOT embed it — see /embeddings/build."""
     content = await file.read()
 
     try:
