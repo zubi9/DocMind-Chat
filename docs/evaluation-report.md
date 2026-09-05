@@ -70,6 +70,15 @@ python3 scripts/evaluate.py \
   --save
 ```
 
-The raw report is available at:
-
-`eval_results/eval-20260904-202522.json`
+Citation
+```text
+@misc{sorodoc2025garagebenchmarkgroundingannotations,
+      title={GaRAGe: A Benchmark with Grounding Annotations for RAG Evaluation}, 
+      author={Ionut-Teodor Sorodoc and Leonardo F. R. Ribeiro and Rexhina Blloshmi and Christopher Davis and Adrià de Gispert},
+      year={2025},
+      eprint={2506.07671},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2506.07671}, 
+}
+```
